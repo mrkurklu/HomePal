@@ -1,0 +1,25 @@
+# HomePAL Project Rules
+
+## Project Overview
+HomePal is a home maintenance and management platform connecting homeowners with professionals.
+
+## Tech Stack
+- **Frontend**: React + TypeScript + Vite + Tailwind CSS
+- **Backend**: Node.js + Express + TypeScript + MongoDB
+- **Real-time**: Socket.io
+- **State Management**: Zustand
+
+## Code Style
+- Use TypeScript for type safety
+- Follow functional component patterns
+- Use async/await for async operations
+- Keep components small and focused
+- Use Tailwind CSS for styling
+- Follow REST API conventions
+
+## Important Notes
+- Always check for authentication before accessing protected routes
+- Use proper error handling and user feedback
+- Implement real-time updates with Socket.io
+- Keep user experience smooth and intuitive
+
