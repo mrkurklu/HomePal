@@ -14,6 +14,16 @@ export interface IUser extends Document {
   cardLast4?: string;
   cardBrand?: string;
   cardHolderName?: string;
+  // Home info (for homeowners)
+  evTipi?: string; // Müstakil, Villa, Daire, Dubleks, Triplex
+  odaSayisi?: string; // 1+0, 1+1, 2+1, 3+1, 4+1, 5+1
+  banyoSayisi?: number;
+  katSayisi?: number;
+  catisiVar?: boolean;
+  yapimYili?: number;
+  yuzOlcum?: number; // m²
+  balkon?: boolean;
+  otopark?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -75,6 +85,39 @@ const UserSchema = new Schema<IUser>(
     cardHolderName: {
       type: String,
       trim: true
+    },
+    // Home info (for homeowners)
+    evTipi: {
+      type: String,
+      trim: true
+    },
+    odaSayisi: {
+      type: String,
+      trim: true
+    },
+    banyoSayisi: {
+      type: Number,
+      min: 0
+    },
+    katSayisi: {
+      type: Number,
+      min: 0
+    },
+    catisiVar: {
+      type: Boolean
+    },
+    yapimYili: {
+      type: Number
+    },
+    yuzOlcum: {
+      type: Number,
+      min: 0
+    },
+    balkon: {
+      type: Boolean
+    },
+    otopark: {
+      type: Boolean
     }
   },
   {

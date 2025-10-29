@@ -201,7 +201,13 @@ export default function ProfilePage() {
                     className="input-field"
                     placeholder="1234 5678 9012 3456"
                     value={formData.cardNumber}
-                    onChange={(e) => setFormData({ ...formData, cardNumber: e.target.value })}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\s/g, ''); // Remove spaces
+                      value = value.replace(/(\d{4})(?=\d)/g, '$1 '); // Add space every 4 digits
+                      if (value.length <= 19) {
+                        setFormData({ ...formData, cardNumber: value });
+                      }
+                    }}
                     maxLength={19}
                   />
                 </div>
@@ -213,7 +219,13 @@ export default function ProfilePage() {
                       className="input-field"
                       placeholder="MM/YY"
                       value={formData.cardExpiry}
-                      onChange={(e) => setFormData({ ...formData, cardExpiry: e.target.value })}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                        if (value.length >= 2) {
+                          value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                        }
+                        setFormData({ ...formData, cardExpiry: value });
+                      }}
                       maxLength={5}
                     />
                   </div>

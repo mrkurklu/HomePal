@@ -27,6 +27,9 @@ export interface Job {
   price?: number;
   notes?: string;
   images?: string[];
+  photoUrl?: string;
+  minPrice?: number;
+  maxPrice?: number;
   createdAt: string;
   updatedAt: string;
 }

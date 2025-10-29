@@ -7,12 +7,14 @@ import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-toastify';
 import Layout from '../components/Layout';
 import { ArrowLeft, MapPin, Clock, User, CheckCircle, DollarSign, Phone, FileText } from 'lucide-react';
+import { Quote } from '../types';
 
 export default function JobDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [job, setJob] = useState<Job | null>(null);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCompleteForm, setShowCompleteForm] = useState(false);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
@@ -27,6 +29,15 @@ export default function JobDetailsPage() {
     cvv: '',
     name: ''
   });
+
+  // Auto-show payment form if coming from notification
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const openPayment = urlParams.get('payment');
+    if (openPayment === 'true' && job && job.price && job.status === 'completed' && !hasPayment) {
+      setShowPaymentForm(true);
+    }
+  }, [job, hasPayment]);
 
   // Check if payment exists for this job
   useEffect(() => {
@@ -50,6 +61,7 @@ export default function JobDetailsPage() {
 
   useEffect(() => {
     fetchJob();
+    fetchQuotes();
   }, [id]);
 
   const fetchJob = async () => {
@@ -61,6 +73,41 @@ export default function JobDetailsPage() {
       navigate('/homeowner');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchQuotes = async () => {
+    try {
+      const res = await api.get('/quotes');
+      const jobId = typeof id === 'string' ? id : id;
+      const jobQuotes = res.data.filter((q: Quote) => {
+        const qJobId = typeof q.job === 'string' ? q.job : q.job._id;
+        return qJobId === jobId;
+      });
+      setQuotes(jobQuotes);
+    } catch (error) {
+      console.error('Fetch quotes error:', error);
+    }
+  };
+
+  const handleAcceptQuote = async (quoteId: string) => {
+    try {
+      await api.put(`/quotes/${quoteId}/accept`);
+      toast.success('Teklif kabul edildi!');
+      fetchJob();
+      fetchQuotes();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Hata oluştu');
+    }
+  };
+
+  const handleRejectQuote = async (quoteId: string) => {
+    try {
+      await api.put(`/quotes/${quoteId}/reject`);
+      toast.info('Teklif reddedildi');
+      fetchQuotes();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Hata oluştu');
     }
   };
 
@@ -191,6 +238,17 @@ export default function JobDetailsPage() {
           Geri
         </button>
 
+        {/* Photo */}
+        {job.photoUrl && (
+          <div className="card mb-6">
+            <img 
+              src={job.photoUrl} 
+              alt={job.title}
+              className="w-full h-80 object-cover rounded-lg"
+            />
+          </div>
+        )}
+        
         <div className="card mb-6">
           <div className="flex justify-between items-start mb-6">
             <div className="flex-1">
@@ -334,6 +392,59 @@ export default function JobDetailsPage() {
           </div>
         )}
 
+        {/* Quotes List for Homeowner */}
+        {isHomeowner && job.status === 'pending' && quotes.length > 0 && (
+          <div className="card mt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Gelen Teklifler</h3>
+            <div className="space-y-4">
+              {quotes.map((quote) => (
+                <div key={quote._id} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-3">
+                      <DollarSign size={20} className="text-green-600" />
+                      <span className="text-xl font-bold text-gray-900">{quote.price} TL</span>
+                      <span className={`badge ${
+                        quote.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        quote.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {quote.status === 'pending' ? 'Beklemede' :
+                         quote.status === 'accepted' ? 'Kabul Edildi' :
+                         'Reddedildi'}
+                      </span>
+                    </div>
+                  </div>
+                  {quote.message && (
+                    <p className="text-gray-600 mb-3">{quote.message}</p>
+                  )}
+                  {typeof quote.professional === 'object' && (
+                    <p className="text-sm text-gray-600 mb-3">
+                      <span className="font-medium">Usta:</span> {quote.professional.name}
+                    </p>
+                  )}
+                  {quote.status === 'pending' && (
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => handleAcceptQuote(quote._id)}
+                        className="btn-primary flex-1 flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle size={16} />
+                        Teklifi Kabul Et
+                      </button>
+                      <button
+                        onClick={() => handleRejectQuote(quote._id)}
+                        className="btn-secondary flex-1"
+                      >
+                        Reddet
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Quote Form */}
         {showQuoteForm && (
           <div className="card mb-6">
@@ -341,18 +452,56 @@ export default function JobDetailsPage() {
               <FileText size={20} />
               Teklif Ver
             </h3>
+            
+            {/* Price Range Info */}
+            {job && job.minPrice && job.maxPrice && (
+              <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-4">
+                <p className="text-sm font-medium text-yellow-900 mb-2 flex items-center gap-2">
+                  <DollarSign size={16} />
+                  Kabul Edilebilir Fiyat Aralığı
+                </p>
+                <p className="text-yellow-800">
+                  Bu iş için fiyat <span className="font-bold text-lg">{job.minPrice} - {job.maxPrice} TL</span> arasında olmalıdır.
+                </p>
+              </div>
+            )}
+            
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fiyat (TL)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fiyat (TL) 
+                  {job && job.minPrice && job.maxPrice && (
+                    <span className="text-xs text-gray-500 ml-2">
+                      ({job.minPrice} - {job.maxPrice} TL arası)
+                    </span>
+                  )}
+                </label>
                 <input
                   type="number"
                   placeholder="Fiyat girin"
                   className="input-field"
                   value={quotePrice}
-                  onChange={(e) => setQuotePrice(e.target.value)}
-                  min="0"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (!value || (parseFloat(value) >= 0)) {
+                      setQuotePrice(value);
+                    }
+                  }}
+                  min={job?.minPrice || 0}
+                  max={job?.maxPrice || 999999}
                   step="0.01"
                 />
+                {job && job.minPrice && job.maxPrice && quotePrice && parseFloat(quotePrice) && (
+                  parseFloat(quotePrice) < job.minPrice || parseFloat(quotePrice) > job.maxPrice ? (
+                    <p className="text-xs text-red-600 mt-1">
+                      ⚠️ Fiyat {job.minPrice} - {job.maxPrice} TL arasında olmalıdır!
+                    </p>
+                  ) : (
+                    <p className="text-xs text-green-600 mt-1">
+                      ✓ Fiyat kabul edilebilir aralıkta
+                    </p>
+                  )
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Not (Opsiyonel)</label>
@@ -365,7 +514,15 @@ export default function JobDetailsPage() {
                 />
               </div>
               <div className="flex gap-2">
-                <button onClick={handleSubmitQuote} className="btn-primary flex-1">
+                <button 
+                  onClick={handleSubmitQuote} 
+                  className="btn-primary flex-1"
+                  disabled={
+                    job && job.minPrice && job.maxPrice && quotePrice 
+                    ? (parseFloat(quotePrice) < job.minPrice || parseFloat(quotePrice) > job.maxPrice)
+                    : false
+                  }
+                >
                   Teklif Gönder
                 </button>
                 <button onClick={() => setShowQuoteForm(false)} className="btn-secondary">
@@ -418,7 +575,13 @@ export default function JobDetailsPage() {
                     placeholder="1234 5678 9012 3456"
                     className="input-field"
                     value={cardInfo.number}
-                    onChange={(e) => setCardInfo({ ...cardInfo, number: e.target.value })}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\s/g, ''); // Remove spaces
+                      value = value.replace(/(\d{4})(?=\d)/g, '$1 '); // Add space every 4 digits
+                      if (value.length <= 19) {
+                        setCardInfo({ ...cardInfo, number: value });
+                      }
+                    }}
                     maxLength={19}
                   />
                 </div>
@@ -430,7 +593,13 @@ export default function JobDetailsPage() {
                       placeholder="MM/YY"
                       className="input-field"
                       value={cardInfo.expiry}
-                      onChange={(e) => setCardInfo({ ...cardInfo, expiry: e.target.value })}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                        if (value.length >= 2) {
+                          value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                        }
+                        setCardInfo({ ...cardInfo, expiry: value });
+                      }}
                       maxLength={5}
                     />
                   </div>

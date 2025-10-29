@@ -29,18 +29,20 @@ export default function HomeownerDashboard() {
 
   // Filter jobs: Separate pending payment from fully completed
   const [awaitingPaymentJobs, setAwaitingPaymentJobs] = useState<Job[]>([]);
+  const [paidJobIds, setPaidJobIds] = useState<string[]>([]);
   
   useEffect(() => {
     const checkAwaitingPayments = async () => {
       try {
         const res = await api.get('/payments');
         const payments = res.data;
-        const paidJobIds = payments
+        const paid = payments
           .filter((p: any) => p.status === 'completed')
           .map((p: any) => typeof p.job === 'string' ? p.job : p.job._id);
+        setPaidJobIds(paid);
         
         const awaiting = jobs.filter(job => 
-          job.status === 'completed' && !paidJobIds.includes(job._id)
+          job.status === 'completed' && !paid.includes(job._id)
         );
         setAwaitingPaymentJobs(awaiting);
       } catch (error) {
@@ -53,9 +55,17 @@ export default function HomeownerDashboard() {
     }
   }, [jobs]);
   
-  const activeJobs = jobs.filter(job => job.status !== 'completed');
-  const archivedJobs = jobs.filter(job => job.status === 'completed');
-  const displayedJobs = showArchive ? archivedJobs : [...activeJobs, ...awaitingPaymentJobs];
+  // Active jobs: not completed, OR completed but payment pending
+  const activeJobs = jobs.filter(job => 
+    job.status !== 'completed' || (job.status === 'completed' && !paidJobIds.includes(job._id))
+  );
+  
+  // Archived jobs: completed AND payment made
+  const archivedJobs = jobs.filter(job => 
+    job.status === 'completed' && paidJobIds.includes(job._id)
+  );
+  
+  const displayedJobs = showArchive ? archivedJobs : activeJobs;
 
   const getStatusBadge = (status: string) => {
     const badges = {
@@ -125,22 +135,22 @@ export default function HomeownerDashboard() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setShowArchive(false)}
-          className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-            !showArchive ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          Aktif İşler ({activeJobs.length})
-        </button>
-        <button
-          onClick={() => setShowArchive(true)}
-          className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-            showArchive ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          Arşiv ({archivedJobs.length})
-        </button>
+          <button
+            onClick={() => setShowArchive(false)}
+            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+              !showArchive ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            Aktif İşler
+          </button>
+          <button
+            onClick={() => setShowArchive(true)}
+            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+              showArchive ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            Arşiv
+          </button>
       </div>
 
       {displayedJobs.length === 0 ? (

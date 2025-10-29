@@ -14,6 +14,9 @@ export interface IJob extends Document {
   price?: number;
   notes?: string;
   images?: string[];
+  photoUrl?: string;
+  minPrice?: number;
+  maxPrice?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -71,7 +74,18 @@ const JobSchema = new Schema<IJob>(
     },
     images: [{
       type: String
-    }]
+    }],
+    photoUrl: {
+      type: String
+    },
+    minPrice: {
+      type: Number,
+      min: 0
+    },
+    maxPrice: {
+      type: Number,
+      min: 0
+    }
   },
   {
     timestamps: true

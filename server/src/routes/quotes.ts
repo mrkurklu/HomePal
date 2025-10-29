@@ -90,6 +90,13 @@ router.post('/', auth, async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: 'You have already quoted for this job' });
     }
 
+    // Check if price is within the allowed range
+    if (job.minPrice && job.maxPrice && (price < job.minPrice || price > job.maxPrice)) {
+      return res.status(400).json({ 
+        message: `Fiyat ${job.minPrice} - ${job.maxPrice} TL arasında olmalıdır.` 
+      });
+    }
+
     const quote = new Quote({
       job: jobId,
       professional: req.user.id,

@@ -130,7 +130,11 @@ export default function NotificationsPage() {
                     handleMarkRead(notification._id);
                   }
                   if (notification.relatedJob) {
-                    navigate(`/jobs/${notification.relatedJob._id}`);
+                    // If it's a payment notification, add payment param
+                    const url = notification.type === 'job-completed' 
+                      ? `/jobs/${notification.relatedJob._id}?payment=true`
+                      : `/jobs/${notification.relatedJob._id}`;
+                    navigate(url);
                   }
                 }}
               >

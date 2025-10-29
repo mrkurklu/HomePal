@@ -30,6 +30,24 @@ const categoryMapping: { [key: string]: string } = {
   'diğer': 'other'
 };
 
+// Category-based price range function
+function getPriceRangeForCategory(category: string): { minPrice: number; maxPrice: number } {
+  const priceRanges: { [key: string]: { minPrice: number; maxPrice: number } } = {
+    'plumbing': { minPrice: 300, maxPrice: 5000 },      // Tesisat
+    'electrical': { minPrice: 200, maxPrice: 3000 },   // Elektrik
+    'hvac': { minPrice: 500, maxPrice: 10000 },         // Isıtma/Sogutma
+    'appliances': { minPrice: 150, maxPrice: 5000 },   // Beyaz Eşya
+    'paint': { minPrice: 500, maxPrice: 10000 },       // Boya
+    'furniture': { minPrice: 200, maxPrice: 8000 },    // Mobilya
+    'flooring': { minPrice: 1000, maxPrice: 15000 },   // Zemin
+    'roofing': { minPrice: 2000, maxPrice: 20000 },    // Çatı
+    'general': { minPrice: 200, maxPrice: 3000 },     // Genel
+    'other': { minPrice: 150, maxPrice: 5000 }         // Diğer
+  };
+  
+  return priceRanges[category] || priceRanges['other'];
+}
+
 // Get all jobs
 router.get('/', auth, async (req: AuthRequest, res: Response) => {
   try {
@@ -106,7 +124,17 @@ router.get('/:id', auth, async (req: AuthRequest, res: Response) => {
 // Create job
 router.post('/', auth, async (req: AuthRequest, res: Response) => {
   try {
-    const { title, description, category, priority, location, scheduledDate } = req.body;
+    const { title, description, category, priority, location, scheduledDate, photoUrl, minPrice, maxPrice } = req.body;
+
+    // Get price range for category (or use provided values)
+    let priceRange = { minPrice: 150, maxPrice: 5000 };
+    if (minPrice && maxPrice) {
+      // Use provided range from AI analysis
+      priceRange = { minPrice, maxPrice };
+    } else {
+      // Use category-based range
+      priceRange = getPriceRangeForCategory(category);
+    }
 
     const job = new Job({
       title,
@@ -115,6 +143,9 @@ router.post('/', auth, async (req: AuthRequest, res: Response) => {
       priority,
       location,
       scheduledDate,
+      photoUrl,
+      minPrice: priceRange.minPrice,
+      maxPrice: priceRange.maxPrice,
       homeowner: req.user?.id,
       status: 'pending'
     });
@@ -218,13 +249,13 @@ router.put('/:id/complete', auth, async (req: AuthRequest, res: Response) => {
       .populate('homeowner', 'name email phone')
       .populate('professional', 'name email phone');
 
-    // Create notifications
+    // Create notifications with payment info
     const Notification = (await import('../models/Notification.js')).default;
     if (job.homeowner) {
       await Notification.create({
         user: job.homeowner,
         type: 'job-completed',
-        message: 'İşiniz tamamlandı! Lütfen ödeme yapın.',
+        message: `İşiniz tamamlandı! ${job.price ? job.price + ' TL ödeme yapın.' : 'Lütfen ödeme yapın.'}`,
         relatedJob: job._id
       });
     }
