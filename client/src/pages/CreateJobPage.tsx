@@ -24,6 +24,7 @@ export default function CreateJobPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [analyzedPriceRange, setAnalyzedPriceRange] = useState<{ min: number; max: number } | null>(null);
+  const [expectedPrice, setExpectedPrice] = useState<string>('');
 
   const categories = [
     { value: 'plumbing', label: 'Tesisat' },
@@ -72,9 +73,6 @@ export default function CreateJobPage() {
         setPhotoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-      
-      // Start AI analysis
-      await analyzePhotoForPriceRange(file);
     }
   };
 
@@ -83,28 +81,20 @@ export default function CreateJobPage() {
     fileInputRef.current?.click();
   };
 
-  // Mock AI analysis based on photo
-  const analyzePhotoForPriceRange = async (photo: File) => {
+  // AI ile fiyat belirle (5sn simüle) - tavan: dip + %25
+  const runAiPricing = async () => {
     setIsAnalyzing(true);
-    
-    // Simulate AI analysis delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Mock AI analysis - creates a MUCH tighter price range
-    const baseRange = getPriceRangeForCategory(formData.category);
-    
-    // Calculate a tighter range: between 8-15% of the base range width
-    const rangeWidth = baseRange.max - baseRange.min;
-    const tightRangeWidth = Math.min(rangeWidth * 0.12, 500); // Max 500 TL range
-    const center = (baseRange.max + baseRange.min) / 2;
-    
-    const min = Math.max(baseRange.min, Math.round(center - tightRangeWidth / 2));
-    const max = Math.min(baseRange.max, Math.round(center + tightRangeWidth / 2));
-    
+    setAnalyzedPriceRange(null);
+    setExpectedPrice('');
+    // 5 saniyelik analiz yüklemesi
+    await new Promise((r) => setTimeout(r, 5000));
+    const base = getPriceRangeForCategory(formData.category);
+    const min = base.min; // dip fiyat
+    const max = Math.round(min * 1.25); // tavan: dip + %25
     setAnalyzedPriceRange({ min, max });
+    setExpectedPrice(String(min)); // otomatik doldur (dip fiyat)
     setIsAnalyzing(false);
-    
-    toast.success(`AI analizi tamamlandı! Önerilen fiyat aralığı: ${min} - ${max} TL`);
+    toast.success(`AI analizi tamamlandı! Önerilen fiyat: ${min} - ${max} TL`);
   };
 
   // Upload photo to server
@@ -346,19 +336,37 @@ export default function CreateJobPage() {
               </p>
             </div>
 
-            {/* Show estimated price range */}
-            {formData.category && !analyzedPriceRange && (
-              <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
-                <p className="text-sm font-medium text-primary-900 mb-2">
-                  💰 Tahmini Fiyat Aralığı
-                </p>
-                <p className="text-primary-700">
-                  Bu kategori için profesyonellerden alacağınız teklifler <span className="font-bold">
-                    {getPriceRangeForCategory(formData.category).min} - {getPriceRangeForCategory(formData.category).max} TL
-                  </span> arasında olmalıdır.
-                </p>
-              </div>
-            )}
+            {/* Fiyat analizi sonucu/ilerleme */}
+            <div className="space-y-3">
+              {isAnalyzing && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
+                  <Sparkles className="animate-pulse text-blue-600" size={20} />
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">Fiyat analizi yapılıyor...</p>
+                    <p className="text-xs text-blue-700">Bu işlem yaklaşık 5 saniye sürecek</p>
+                  </div>
+                </div>
+              )}
+
+              {analyzedPriceRange && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-green-900 mb-1">Tahmini Fiyat Aralığı</p>
+                  <p className="text-green-800 font-semibold text-lg">{analyzedPriceRange.min} - {analyzedPriceRange.max} TL</p>
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Ücret (TL)</label>
+                    <input
+                      type="number"
+                      className="input-field"
+                      value={expectedPrice}
+                      min={analyzedPriceRange.min}
+                      max={analyzedPriceRange.max}
+                      onChange={(e) => setExpectedPrice(e.target.value)}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Bu değer ilan oluştururken otomatik kullanılacaktır.</p>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="flex gap-4 pt-4">
               <button
@@ -368,13 +376,24 @@ export default function CreateJobPage() {
               >
                 İptal
               </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 btn-primary"
-              >
-                {loading ? 'Oluşturuluyor...' : 'İş Emri Oluştur'}
-              </button>
+              {analyzedPriceRange ? (
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 btn-primary"
+                >
+                  {loading ? 'Oluşturuluyor...' : 'İş Emri Oluştur'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={runAiPricing}
+                  disabled={isAnalyzing}
+                  className="flex-1 btn-primary"
+                >
+                  {isAnalyzing ? 'Analiz Yapılıyor...' : 'Fiyat Analizi Yap'}
+                </button>
+              )}
             </div>
           </form>
         </div>
