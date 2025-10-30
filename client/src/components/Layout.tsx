@@ -55,10 +55,10 @@ export default function Layout({ children, userRole }: LayoutProps) {
                 <>
                   <Link
                     to="/reminders"
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-primary-200 text-primary-700 hover:bg-primary-50 hover:border-primary-300 font-medium"
+                    className="flex items-center space-x-1 text-primary-600 hover:text-primary-700 font-medium"
                     title="Rutin Bakım Hatırlatıcısı"
                   >
-                    <CalendarClock size={18} />
+                    <CalendarClock size={20} />
                     <span>Rutin Bakım Hatırlatıcısı</span>
                   </Link>
                   <Link
