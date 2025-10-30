@@ -14,6 +14,7 @@ import JobDetailsPage from './pages/JobDetailsPage';
 import ProfilePage from './pages/ProfilePage';
 import QuotesPage from './pages/QuotesPage';
 import NotificationsPage from './pages/NotificationsPage';
+import RemindersPage from './pages/RemindersPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -76,6 +77,11 @@ function App() {
         <Route path="/notifications" element={
           <PrivateRoute>
             <NotificationsPage />
+          </PrivateRoute>
+        } />
+        <Route path="/reminders" element={
+          <PrivateRoute>
+            <RemindersPage />
           </PrivateRoute>
         } />
         

@@ -54,3 +54,17 @@ export interface AuthState {
   logout: () => void;
 }
 
+export type ReminderCategory = 'cati' | 'tesisat' | 'elektrik' | 'bahce' | 'boya' | 'klima';
+
+export interface Reminder {
+  _id: string;
+  homeowner: string;
+  name: string;
+  category: ReminderCategory;
+  frequencyDays: number;
+  nextDueDate: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+

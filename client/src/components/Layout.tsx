@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
-import { Home, PlusCircle, User, LogOut, FileText, Bell } from 'lucide-react';
+import { Home, PlusCircle, User, LogOut, FileText, Bell, CalendarClock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface LayoutProps {
@@ -53,6 +53,14 @@ export default function Layout({ children, userRole }: LayoutProps) {
             <div className="flex items-center space-x-4">
               {userRole === 'homeowner' && (
                 <>
+                  <Link
+                    to="/reminders"
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-primary-200 text-primary-700 hover:bg-primary-50 hover:border-primary-300 font-medium"
+                    title="Rutin Bakım Hatırlatıcısı"
+                  >
+                    <CalendarClock size={18} />
+                    <span>Rutin Bakım Hatırlatıcısı</span>
+                  </Link>
                   <Link
                     to="/quotes"
                     className="flex items-center space-x-1 text-primary-600 hover:text-primary-700 font-medium"

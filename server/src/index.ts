@@ -35,6 +35,7 @@ import quoteRoutes from './routes/quotes.js';
 import notificationRoutes from './routes/notifications.js';
 import paymentRoutes from './routes/payments.js';
 import uploadRoutes from './routes/upload.js';
+import reminderRoutes from './routes/reminders.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
@@ -43,6 +44,7 @@ app.use('/api/quotes', quoteRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/reminders', reminderRoutes);
 
 // Socket.io for real-time updates
 io.on('connection', (socket) => {

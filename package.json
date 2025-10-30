@@ -1,0 +1,14 @@
+{
+  "name": "homepal-monorepo",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "echo Run dev scripts in client and server",
+    "postinstall": "npm --prefix client install && npm --prefix server install"
+  }
+}
+
+
